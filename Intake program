@@ -1,0 +1,123 @@
+from docx import Document
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_HEADER_FOOTER
+import os
+import datetime
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+
+entries = {}
+
+
+def save_document():
+    # Create a new Word document
+    doc = Document()
+
+    # Set margins
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1)
+        section.right_margin = Inches(1)
+
+    # Get the current date in mm-dd-yyyy format
+    current_date = datetime.datetime.now().strftime("%m-%d-%Y")
+
+    # Add title
+    section = doc.sections[0]
+    section_title = section.header.add_paragraph()
+    section_title.text = "South County Child and Family Consultants - Intake Form"
+    section_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    section_title.style.font.name = "Arial"
+    section_title.style.font.size = Pt(14)  # Adjusted font size for title
+
+    # Add current date to header
+    header = section.header
+    paragraph = header.paragraphs[0]
+    paragraph.add_run(current_date).alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    # Add content
+    patient_name = entries["Patient Name"].get()
+
+    # Add user data in multiple paragraphs
+    paragraphs = [
+        ["Patient Name", "Date of Birth", "Gender"],
+        ["Caller's Name", "Relationship to Patient"],
+        ["Address", "Phone Number", "Email"],
+        ["School", "Grade"],
+        ["Referral"],
+        ["Psych Testing in the Past", "Hospitalized for Psych Reasons"],
+        ["Insurance", "Member or Subscriber ID"],
+        ["Reason for Treatment"]
+    ]
+
+    for group in paragraphs:
+        for key in group:
+            value = entries[key].get()
+            if value:
+                p = doc.add_paragraph(style="BodyText")
+                p.add_run(f"{key}: ").bold = True
+                p.add_run(value)
+                #p.add_run(" | ")
+                p.paragraph_format.space_after = Pt(5)
+
+        # Add a "Thin Banner" between paragraphs
+        thin_banner = doc.add_paragraph()
+        thin_banner.add_run("-" * 60)  # Customize the banner as needed
+        thin_banner.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        thin_banner.paragraph_format.space_after = Pt(5)
+
+    # Add Appointment Date
+    appointment_paragraph = doc.add_paragraph()
+    appointment_paragraph.add_run("Appointment Date: ________________")
+    appointment_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    appointment_paragraph.paragraph_format.space_after = Pt(20)
+
+    # Prompt user to select directory
+    save_dir = filedialog.askdirectory()
+    if save_dir:  # If user selects a directory
+        # save the document with patient name in selected directory
+        doc.save(os.path.join(save_dir, f'{current_date}_{patient_name}.docx'))
+        # Notify the user
+        result_label.config(text="Document saved successfully.")
+    else:
+        result_label.config(text="Document not saved. No directory selected.")
+
+
+# Create GUI window
+window = tk.Tk()
+window.title("Patient Information Form")
+
+# create labels and entry fields for each question
+questions = [
+    "Date", "Patient Name", "Date of Birth", "Gender", "Caller's Name", "Relationship to Patient",
+    "Address", "Phone Number", "Email", "School", "Grade", "Referral",
+    "Psych Testing in the Past", "Hospitalized for Psych Reasons", "Reason for Treatment",
+    "Insurance", "Member or Subscriber ID"
+]
+
+# Create labels and entry fields
+for i, question in enumerate(questions):
+    label = ttk.Label(window, text=question, font=("Arial", 10, "bold"))  # Adjusted font size for labels
+    label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
+    entry = ttk.Entry(window, width=50, font=("Arial", 10))  # Adjusted font size for entry fields
+    entry.grid(row=i, column=1, padx=10, pady=5)
+    entries[question] = entry
+
+# Populate "Date" field with current date
+current_date = datetime.datetime.now().strftime("%m-%d-%Y")
+entries["Date"].insert(0, current_date)
+
+# Create a button to save the document
+save_button = ttk.Button(window, text="Save Document", command=save_document, style="success.TButton")
+save_button.grid(row=len(questions) + 1, column=0, columnspan=2, pady=10)
+
+# Create a label to show the result of saving the document
+result_label = ttk.Label(window, text="", font=("Arial", 12), foreground="#4CAF50")
+result_label.grid(row=len(questions) + 2, column=0, columnspan=2)
+
+# Start the GUI event loop
+window.mainloop()
