@@ -10,6 +10,8 @@ from tkinter import filedialog
 
 entries = {}
 
+def clear_message():
+    result_label.config(text="")
 
 def save_document():
     # Create a new Word document
@@ -83,9 +85,47 @@ def save_document():
         doc.save(os.path.join(save_dir, f'{current_date}_{patient_name}.docx'))
         # Notify the user
         result_label.config(text="Document saved successfully.")
+        window.after(3000, clear_message)
     else:
         result_label.config(text="Document not saved. No directory selected.")
+        window.after(3000, clear_message)
 
+def load_document():
+    # Open a file dialog to select the document
+    file_path = filedialog.askopenfilename(filetypes=[("Word files", "*.docx")])
+    if file_path:  # If a file is selected
+        try:
+            # Open the selected document
+            doc = Document(file_path)
+            # Extract data from the document
+            data = {}
+            for paragraph in doc.paragraphs:
+                text = paragraph.text
+                if ":" in text:
+                    key, value = text.split(":", 1)
+                    data[key.strip()] = value.strip()
+            # Populate the corresponding entry fields
+            for question, entry in entries.items():
+                if question in data:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, data[question])
+            # Notify the user
+            result_label.config(text="Document loaded successfully.")
+            window.after(3000, clear_message)
+        except Exception as e:
+            result_label.config(text=f"Error loading document: {e}")
+            window.after(3000, clear_message)
+    else:
+        result_label.config(text="No document selected.")
+        window.after(3000, clear_message)
+
+def clear_fields():
+    # Clear all entry fields
+    for entry in entries.values():
+        entry.delete(0, tk.END)
+    # Notify the user
+    result_label.config(text="Fields cleared successfully.")
+    window.after(3000, clear_message)
 
 # Create GUI window
 window = tk.Tk()
@@ -101,9 +141,9 @@ questions = [
 
 # Create labels and entry fields
 for i, question in enumerate(questions):
-    label = ttk.Label(window, text=question, font=("Arial", 10, "bold"))  # Adjusted font size for labels
+    label = ttk.Label(window, text=question, font=("Arial", 10, "bold"))  
     label.grid(row=i, column=0, padx=10, pady=5, sticky="e")
-    entry = ttk.Entry(window, width=50, font=("Arial", 10))  # Adjusted font size for entry fields
+    entry = ttk.Entry(window, width=50, font=("Arial", 10))  
     entry.grid(row=i, column=1, padx=10, pady=5)
     entries[question] = entry
 
@@ -113,7 +153,15 @@ entries["Date"].insert(0, current_date)
 
 # Create a button to save the document
 save_button = ttk.Button(window, text="Save Document", command=save_document, style="success.TButton")
-save_button.grid(row=len(questions) + 1, column=0, columnspan=2, pady=10)
+save_button.grid(row=len(questions) + 1, column=0, padx=5, pady=10, sticky="ew")
+
+# Create a button to load a document
+load_button = ttk.Button(window, text="Load Document", command=load_document)
+load_button.grid(row=len(questions) + 1, column=1, padx=5, pady=10, sticky="ew")
+
+# Create a button to clear fields
+clear_button = ttk.Button(window, text="Clear Fields", command=clear_fields)
+clear_button.grid(row=len(questions) + 2, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
 
 # Create a label to show the result of saving the document
 result_label = ttk.Label(window, text="", font=("Arial", 12), foreground="#4CAF50")
