@@ -120,12 +120,23 @@ def load_document():
         window.after(3000, clear_message)
 
 def clear_fields():
-    # Clear all entry fields
-    for entry in entries.values():
-        entry.delete(0, tk.END)
+    # Get the current date
+    current_date = entries["Date"].get()
+    
+    # Clear all entry fields except the date field
+    for question, entry in entries.items():
+        if question != "Date":
+            entry.delete(0, tk.END)
+    
+    # Set the current date back to the date field
+    entries["Date"].delete(0, tk.END)
+    entries["Date"].insert(0, current_date)
+    
     # Notify the user
     result_label.config(text="Fields cleared successfully.")
+    # Schedule the clear_message function to run after 3000 milliseconds (3 seconds)
     window.after(3000, clear_message)
+
 
 # Create GUI window
 window = tk.Tk()
